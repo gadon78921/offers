@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+    app:
+        build:
+            dockerfile: .docker/Dockerfile
+            target: app
+            context: ./
+        environment:
+            APP_ENV                      : 'dev'
+            APP_SECRET                   : '01fdf54f7cbcda4fc44e2b215e8498c4'
+            DATABASE_URL                 : 'pgsql://postgres:postgres@postgres:5432/offers'
+            ESB_LOC_FILE_DIRECTORY       : '/tmp'
+            ESB_LOC_FILE_NAME            : 'esb_in_progress'
+            ESB_INCOMING_LOG_LEVEL       : 'info'
+            ESB_INCOMING_LOG_FILE        : '%kernel.logs_dir%/esb-income.log'
+            ESB_INCOMING_ROTATE_MAX_FILES: 10
+            ESB_SENDER_URL               : 'http://srv-esb-stub.prp.ru/message/v1.0/xml'
+            STOMP_BROKER_URL             : 'tcp://activemq:61613'
+            NGINX_ROOT_DIRECTORY         : '/service/public'
+            SERVICE_LOGPATH              : '/logs/offers-service'
+            SAL_APP_UID                  : 'offers-service'
+            FTP_LOGIN                    : 'isapteka'
+            FTP_PASSWORD                 : 'isapteka'
+            LOCAL_PATH_TO_PRICES         : '/tmp/prices/'
+            OFFERS_IMAGES_URL            : 'https://xn----jtbzarccck.xn--80ae2aeeogi5fxc.xn--p1ai/s/gi/'
+        links:
+            - postgres
+        volumes:
+            - .:/service
+
+    postgres:
+        image: postgres:14.1
+        environment:
+            TZ: Asia/Vladivostok
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_USER: postgres
+            POSTGRES_DB: offers
+
+    redis:
+        image: redis:6.2.5
+
+    activemq:
+        image: docker.7733.ru/devops/activemq
+        environment:
+            TZ: Asia/Vladivostok
+            ACTIVEMQ_UI_PASSWORD: qwerty

@@ -1,0 +1,176 @@
+# This file is the entry point to configure your own services.
+# Files in the packages/ subdirectory configure your dependencies.
+
+# Put parameters here that don't need to change on each machine where the app is deployed
+# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
+parameters:
+
+services:
+    # default configuration for services in *this* file
+    _defaults:
+        autowire: true      # Automatically injects dependencies in your services.
+        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+        bind:
+            $offersImagesUrl: '%env(OFFERS_IMAGES_URL)%'
+
+    # makes classes in src/ available to be used as services
+    # this creates a service per class whose id is the fully-qualified class name
+    App\:
+        resource: '../src/'
+        exclude:
+            - '../src/DependencyInjection/'
+            - '../src/Entity/'
+            - '../src/Kernel.php'
+            - '../src/Tests/'
+
+    # fix Monastirevrf\EsbBundle issue
+    Symfony\Component\DependencyInjection\ContainerInterface: '@service_container'
+    Psr\Container\ContainerInterface: '@service_container'
+
+    # add more service definitions when explicit configuration is needed
+    # please note that last definitions always *replace* previous ones
+
+    AssortmentUnitSpecificationHandler:
+        class: App\Esb\In\AssortmentUnitSpecification\AssortmentUnitSpecificationHandler
+        public: true
+
+    KaisProductHandler:
+        class: App\Esb\In\KaisProduct\KaisProductHandler
+        public: true
+
+    KaisCountryHandler:
+        class: App\Esb\In\KaisCountry\KaisCountryHandler
+        public: true
+
+    KaisGenericHandler:
+        class: App\Esb\In\KaisGeneric\KaisGenericHandler
+        public: true
+
+    KaisProducerHandler:
+        class: App\Esb\In\KaisProducer\KaisProducerHandler
+        public: true
+
+    KaisProductPersonCategoryHandler:
+        class: App\Esb\In\KaisProductPersonCategory\KaisProductPersonCategoryHandler
+        public: true
+
+    KaisProductPersonCategorySuffixHandler:
+        class: App\Esb\In\KaisProductPersonCategorySuffix\KaisProductPersonCategorySuffixHandler
+        public: true
+
+    KaisSimplifiedDosageFormHandler:
+        class: App\Esb\In\KaisSimplifiedDosageForm\KaisSimplifiedDosageFormHandler
+        public: true
+
+    RetailAssortmentUnitHandler:
+        class: App\Esb\In\RetailAssortmentUnit\RetailAssortmentUnitHandler
+        public: true
+
+    RetailCityHandler:
+        class: App\Esb\In\RetailCity\RetailCityHandler
+        public: true
+
+    RetailProductHandler:
+        class: App\Esb\In\RetailProduct\RetailProductHandler
+        public: true
+
+    RetailStocksHandler:
+        class: App\Esb\In\RetailStocks\RetailStocksHandler
+        public: true
+
+    RetailSupplierHandler:
+        class: App\Esb\In\RetailSupplier\RetailSupplierHandler
+        public: true
+
+    RetailTradePointHandler:
+        class: App\Esb\In\RetailTradePoint\RetailTradePointHandler
+        public: true
+
+    RetailOrderCityPricesExportedHandler:
+        class: App\Esb\In\RetailOrderCityPrices\Messages\RetailOrderCityPricesExportedHandler
+        public: true
+
+    RetailSupplierPricesHandler:
+        class: App\Esb\In\RetailSupplierPrices\Messages\RetailSupplierPricesHandler
+        public: true
+
+    RetailSupplierPrioritiesHandler:
+        class: App\Esb\In\RetailSupplierPriorities\Messages\RetailSupplierPrioritiesHandler
+        public: true
+
+    RetailRuleCustomerOrderReadyTimeHandler:
+        class: App\Esb\In\RetailRuleCustomerOrderReadyTime\RetailRuleCustomerOrderReadyTimeHandler
+        public: true
+
+    RetailRuleDeliveryTimeHandler:
+        class: App\Esb\In\RetailRuleDeliveryTime\RetailRuleDeliveryTimeHandler
+        public: true
+
+    RetailRuleTradePointParamsMessageHandler:
+        class: App\Esb\In\RetailRuleTradePointParams\RetailRuleTradePointParamsMessageHandler
+        public: true
+
+    App\Esb\In\RetailOrderCityPrices\Infrastructure\OrderPricesFtpAccessObject:
+        class: App\Esb\In\RetailOrderCityPrices\Infrastructure\OrderPricesFtpAccessObject
+        public: true
+        arguments:
+            $ftpLogin: '%env(string:FTP_LOGIN)%'
+            $ftpPassword: '%env(string:FTP_PASSWORD)%'
+            $pathToLocalFile: '%env(string:LOCAL_PATH_TO_PRICES)%'
+
+    App\Esb\In\RetailSupplierPrices\Infrastructure\SupplierPricesDataFtpAccessObject:
+        class: App\Esb\In\RetailSupplierPrices\Infrastructure\SupplierPricesDataFtpAccessObject
+        public: true
+        arguments:
+            $ftpLogin: '%env(string:FTP_LOGIN)%'
+            $ftpPassword: '%env(string:FTP_PASSWORD)%'
+            $pathToLocalFile: '%env(string:LOCAL_PATH_TO_PRICES)%'
+
+    App\Esb\In\RetailSupplierPriorities\Infrastructure\SupplierPrioritiesDataFtpAccessObject:
+        class: App\Esb\In\RetailSupplierPriorities\Infrastructure\SupplierPrioritiesDataFtpAccessObject
+        public: true
+        arguments:
+            $ftpLogin: '%env(string:FTP_LOGIN)%'
+            $ftpPassword: '%env(string:FTP_PASSWORD)%'
+            $pathToLocalFile: '%env(string:LOCAL_PATH_TO_PRICES)%'
+
+    FtpClient\FtpClient:
+        class: FtpClient\FtpClient
+        public: true
+
+    App\OffersBuilding\Gateway\ProductDatabaseAccessObject:
+        class: App\OffersBuilding\Gateway\ProductDatabaseAccessObject
+        arguments:
+            $tableName: 'products'
+
+    App\OffersBuilding\Gateway\OfferDatabaseAccessObject:
+        class: App\OffersBuilding\Gateway\OfferDatabaseAccessObject
+        arguments:
+            $tableName: 'offers'
+
+    App\OffersBuilding\Gateway\ProductGateway:
+        class: App\OffersBuilding\Gateway\ProductGateway
+        arguments:
+            $repository: '@App\OffersBuilding\Repository\OffersForSite\OfferByKaisProductIdRepository'
+            $dao: '@App\OffersBuilding\Gateway\ProductDatabaseAccessObject'
+
+    App\OffersBuilding\Gateway\OffersForSiteGateway:
+        class: App\OffersBuilding\Gateway\OffersForSiteGateway
+        arguments:
+            $repository: '@App\OffersBuilding\Repository\OffersForSite\OfferByAssortmentUnitIdRepository'
+            $dao: '@App\OffersBuilding\Gateway\OfferDatabaseAccessObject'
+
+    App\Esb\In\RetailSupplierPrices\Commands\Handlers\ImportSupplierPriceHandler:
+        class: App\Esb\In\RetailSupplierPrices\Commands\Handlers\ImportSupplierPriceHandler
+        arguments:
+            $dsn: '%env(string:DATABASE_URL)%'
+
+    App\Esb\In\RetailOrderCityPrices\Commands\Handlers\ImportOrderPriceHandler:
+        class: App\Esb\In\RetailOrderCityPrices\Commands\Handlers\ImportOrderPriceHandler
+        arguments:
+            $dsn: '%env(string:DATABASE_URL)%'
+
+    App\Esb\In\RetailSupplierPriorities\Commands\Handlers\ImportSupplierPrioritiesHandler:
+        class: App\Esb\In\RetailSupplierPriorities\Commands\Handlers\ImportSupplierPrioritiesHandler
+        arguments:
+            $dsn: '%env(string:DATABASE_URL)%'

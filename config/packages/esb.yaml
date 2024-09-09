@@ -1,0 +1,89 @@
+esb:
+    receiver:
+        message_map:
+            'ping'                             : Monastirevrf\EsbBundle\Messages\Ping
+            'assortment-unit-specification'    : App\Esb\In\AssortmentUnitSpecification\Messages\AssortmentUnitSpecificationMessage
+            'city'                             : App\Esb\In\RetailCity\RetailCityMessage
+            'country'                          : App\Esb\In\KaisCountry\KaisCountryMessage
+            'generic'                          : App\Esb\In\KaisGeneric\KaisGenericMessage
+            'producer'                         : App\Esb\In\KaisProducer\KaisProducerMessage
+            'product'                          : App\Esb\In\KaisProduct\KaisProductMessage
+            'product-person-category'          : App\Esb\In\KaisProductPersonCategory\KaisProductPersonCategoryMessage
+            'product-person-category-suffix'   : App\Esb\In\KaisProductPersonCategorySuffix\KaisProductPersonCategorySuffixMessage
+            'retail-assortment-unit'           : App\Esb\In\RetailAssortmentUnit\RetailAssortmentUnitMessage
+            'retail-order-city-prices-exported': App\Esb\In\RetailOrderCityPrices\Messages\RetailOrderCityPricesMessage
+            'retail-product'                   : App\Esb\In\RetailProduct\RetailProductMessage
+            'retail-stocks'                    : App\Esb\In\RetailStocks\Messages\RetailStocksMessage
+            'retail-supplier'                  : App\Esb\In\RetailSupplier\RetailSupplierMessage
+            'retail-supplier-prices-exported'  : App\Esb\In\RetailSupplierPrices\Messages\RetailSupplierPricesMessage
+            'retail-supplier-priorities'       : App\Esb\In\RetailSupplierPriorities\Messages\RetailSupplierPrioritiesMessage
+            'rule-customer-order-ready-time'   : App\Esb\In\RetailRuleCustomerOrderReadyTime\Messages\RetailRuleCustomerOrderReadyTimeMessage
+            'rule-delivery-time'               : App\Esb\In\RetailRuleDeliveryTime\Messages\RuleDeliveryTimeMessage
+            'rule-tradepoint-params'           : App\Esb\In\RetailRuleTradePointParams\Messages\RuleTradePointParamsMessage
+            'simplified-dosage-form'           : App\Esb\In\KaisSimplifiedDosageForm\KaisSimplifiedDosageFormMessage
+            'trade-point'                      : App\Esb\In\RetailTradePoint\RetailTradePointMessage
+
+        handlers_map:
+            'Monastirevrf\EsbBundle\Messages\Ping'                                                        : [PingHandler, idleHandle]
+            'App\Esb\In\AssortmentUnitSpecification\Messages\AssortmentUnitSpecificationMessage'          : [AssortmentUnitSpecificationHandler, handle]
+            'App\Esb\In\KaisCountry\KaisCountryMessage'                                                   : [KaisCountryHandler, handle]
+            'App\Esb\In\KaisGeneric\KaisGenericMessage'                                                   : [KaisGenericHandler, handle]
+            'App\Esb\In\KaisProducer\KaisProducerMessage'                                                 : [KaisProducerHandler, handle]
+            'App\Esb\In\KaisProduct\KaisProductMessage'                                                   : [KaisProductHandler, handle]
+            'App\Esb\In\KaisProductPersonCategory\KaisProductPersonCategoryMessage'                       : [KaisProductPersonCategoryHandler, handle]
+            'App\Esb\In\KaisProductPersonCategorySuffix\KaisProductPersonCategorySuffixMessage'           : [KaisProductPersonCategorySuffixHandler, handle]
+            'App\Esb\In\KaisSimplifiedDosageForm\KaisSimplifiedDosageFormMessage'                         : [KaisSimplifiedDosageFormHandler, handle]
+            'App\Esb\In\RetailAssortmentUnit\RetailAssortmentUnitMessage'                                 : [RetailAssortmentUnitHandler, handle]
+            'App\Esb\In\RetailCity\RetailCityMessage'                                                     : [RetailCityHandler, handle]
+            'App\Esb\In\RetailProduct\RetailProductMessage'                                               : [RetailProductHandler, handle]
+            'App\Esb\In\RetailSupplier\RetailSupplierMessage'                                             : [RetailSupplierHandler, handle]
+            'App\Esb\In\RetailTradePoint\RetailTradePointMessage'                                         : [RetailTradePointHandler, handle]
+            'App\Esb\In\RetailOrderCityPrices\Messages\RetailOrderCityPricesMessage'                      : [RetailOrderCityPricesExportedHandler, handle]
+            'App\Esb\In\RetailRuleCustomerOrderReadyTime\Messages\RetailRuleCustomerOrderReadyTimeMessage': [RetailRuleCustomerOrderReadyTimeHandler, handle]
+            'App\Esb\In\RetailRuleDeliveryTime\Messages\RuleDeliveryTimeMessage'                          : [RetailRuleDeliveryTimeHandler, handle]
+            'App\Esb\In\RetailRuleTradePointParams\Messages\RuleTradePointParamsMessage'                  : [RetailRuleTradePointParamsMessageHandler, handle]
+            'App\Esb\In\RetailStocks\Messages\RetailStocksMessage'                                        : [RetailStocksHandler, handle]
+            'App\Esb\In\RetailSupplierPrices\Messages\RetailSupplierPricesMessage'                        : [RetailSupplierPricesHandler, handle]
+            'App\Esb\In\RetailSupplierPriorities\Messages\RetailSupplierPrioritiesMessage'                : [RetailSupplierPrioritiesHandler, handle]
+
+            #   Дефолтно будет выполняться метод handleFromEsb репозитория для данной сущности
+            #   'Полное наименование класса по PSR': ['имя сервиса/класса', 'вызываемый метод']
+            #   Пример 'App\Entity\RetailMarketingContract': ['retail_write_off.repository', 'persist']
+
+    sender:
+        idle_timeout_sec: 300           # Время простоя до перезапуска
+        esb_url: '%env(ESB_SENDER_URL)%' # Адрес шины. Значение по умолчанию 'http://esb.loc/message/v1.0/xml'
+        queues:
+            - '%env(ESB_QUEUE_NAME)%'
+        app_id: '%env(ESB_SENDER_APP_ID)%'
+        app_token: '%env(ESB_SENDER_APP_TOKEN)%'
+
+services:
+    # ВНИМАНИЕ!!!! Имя сервиса зарезервировано. Все остальное может быть изменено.
+    logger.esb_income:
+        alias: 'monolog.logger.esb_income'
+        public: true
+
+    # ВНИМАНИЕ!!!! Имя сервиса зарезервировано. Все остальное может быть изменено.
+    logger.esb_outgoing:
+        alias: 'monolog.logger.esb_outgoing'
+        public: true
+
+monolog:
+    # Каналы логгера для сообщений шины
+    channels: [esb_income, esb_outgoing]
+    handlers:
+        esb_income:
+            type: rotating_file
+            path: '%kernel.logs_dir%/esb/income.log'
+            level: info
+            channels: [esb_income]
+            max_files: '%env(ESB_INCOMING_ROTATE_MAX_FILES)%'
+            formatter: esb.log_formatter
+        esb_outgoing:
+            type: rotating_file
+            path: '%kernel.logs_dir%/esb/outgoing.log'
+            level: debug
+            channels: [esb_outgoing]
+            max_files: '%env(ESB_INCOMING_ROTATE_MAX_FILES)%'
+            formatter: esb.log_formatter

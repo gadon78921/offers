@@ -1,0 +1,39 @@
+esb:
+    # Директория в которой будет храниться файл блокировки 
+    loc_file_directory: '%env(ESB_LOC_FILE_DIRECTORY)%'
+     # Директория в которой будет храниться файл блокировки
+    loc_file_name: '%env(ESB_LOC_FILE_NAME)%'
+    
+    receiver:
+        message_map: 
+            'test': 'App\Tests\Objects\TestObject'
+    sender:
+        esb_url: '%env(ESB_SENDER_URL)%'
+        app_id: '%env(ESB_SENDER_APP_ID)%'
+        app_token: '%env(ESB_SENDER_APP_TOKEN)%'
+
+services:
+    # Дефолтный результирующий кеш
+    esb.cache.result:
+        class: Symfony\Component\Cache\Adapter\FilesystemAdapter
+        autowire: true
+        public: true
+
+monolog:
+    # Каналы логгера для сообщений шины
+    channels: [esb_income, esb_outgoing]
+    handlers:
+        esb_income:
+            type: rotating_file
+            path: '%kernel.logs_dir%/esb/income-test.log'
+            level: info
+            channels: [esb_income]
+            max_files: '%env(ESB_INCOMING_ROTATE_MAX_FILES)%'
+            formatter: esb.log_formatter
+        esb_outgoing:
+            type: rotating_file
+            path: '%kernel.logs_dir%/esb/outgoing-test.log'
+            level: debug
+            channels: [esb_outgoing]
+            max_files: '%env(ESB_INCOMING_ROTATE_MAX_FILES)%'
+            formatter: esb.log_formatter

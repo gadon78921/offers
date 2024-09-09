@@ -1,0 +1,12 @@
+esb:
+    # Директория в которой будет храниться файл блокировки
+    loc_file_directory: '%env(ESB_LOC_FILE_DIRECTORY)%'
+    # Директория в которой будет храниться файл блокировки
+    loc_file_name: '%env(ESB_LOC_FILE_NAME)%'
+
+services:
+    # Дефолтный результирующий кеш
+    esb.cache.result:
+        class: Symfony\Component\Cache\Adapter\FilesystemAdapter
+        autowire: true
+        public: true

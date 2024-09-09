@@ -1,0 +1,4 @@
+#!/usr/bin/with-contenv sh
+
+cd /service
+bin/console messenger:consume async --time-limit=3600 --sleep 60 --no-interaction --quiet

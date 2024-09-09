@@ -1,0 +1,15 @@
+controllers:
+    resource: ../../src/Controller/
+    type: annotation
+
+offer-api:
+    resource: ../../src/OffersApi/Controller/
+    type: annotation
+
+product-api:
+    resource: ../../src/ProductsApi/Controller/
+    type: annotation
+
+kernel:
+    resource: ../../src/Kernel.php
+    type: annotation

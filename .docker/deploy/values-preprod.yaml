@@ -1,0 +1,177 @@
+imagePullSecrets:
+  - name: offers-regcred
+
+imagePullSecretName: offers-regcred
+
+migration:
+  command: ["/usr/bin/env"]
+  args: ["php", "/service/bin/console", "do:mi:mi", "--allow-no-migration", "-q"]
+
+imageCredentials:
+  registry: docker.7733.ru
+  # username: regcred
+  # password: zzyzwrUAxYCkMcPQgvFg
+  username: gregcrednew
+  password: siywe6YxTJ9vs2L_vQiJ
+
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations:
+ checksum/config: |-
+   {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+ app:
+  type: ClusterIP
+  port: 80
+ redis:
+  type: ClusterIP
+  port: 6379
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}
+
+replicaCount:
+  app: 1
+  worker: 1
+
+image:
+  app:
+    repository: docker.7733.ru/service/offers/feature/328494_receive_all_necessary_objects_from_esb:14
+    pullPolicy: Always
+  redis:
+    repository: redis:4.0.9
+    pullPolicy: IfNotPresent
+
+ingress:
+  enabled: true
+  newingress: true
+  annotations:
+    nginx.ingress.kubernetes.io/whitelist-source-range: 10.0.0.0/8,172.0.0.0/8,192.168.0.0/16
+  hosts:
+    - host: offers.new-preprod.7733.ru
+      paths:
+       - /
+  tls: []
+
+prpingress:
+  enabled: false
+  hosts:
+    - host: offers.new-preprod.7733.ru
+      paths:
+       - /
+
+resources:
+  app:
+    limits:
+      memory: 10Gi
+    requests:
+      memory: 2Gi
+  redis:
+    limits:
+      memory: 300Mi
+    requests:
+      memory: 100Mi
+  worker:
+    limits:
+      memory: 300Mi
+    requests:
+      memory: 190Mi
+
+volume:
+  data:
+    sc: yc-network-hdd
+  tmp:
+    sc: yc-network-hdd
+env:
+  APP_ENV: prod
+  APP_DEBUG: 0
+  APP_SECRET: 01fdf54f7cbcda4fc44e2b215e8498c4
+  REDIS_URL: redis://offers-redis
+  REDIS_LOCK_HOST: offers-redis
+  DATABASE_URL: postgresql://offers:TcjMgueRmVMMvwfT@c-c9qr674bu6gmo3oj1b67.rw.mdb.yandexcloud.net:6432/offers
+  NGINX_ROOT_DIRECTORY: /service/public
+  ESB_LOC_FILE_DIRECTORY: /tmp
+  ESB_LOC_FILE_NAME: esb_in_progress
+  ESB_INCOMING_LOG_LEVEL: info
+  ESB_INCOMING_LOG_FILE: '%kernel.logs_dir%/esb-income.log'
+  ESB_INCOMING_ROTATE_MAX_FILES: 10
+  SERVICE_LOG_PATH: logs/offers
+  SAL_APP_UID: offers
+  ESB_SENDER_APP_ID: OffersService
+  ESB_SENDER_APP_TOKEN: OffersServiceToken
+  STOMP_BROKER_URL: tcp://activemq.activemq.svc.cluster.local:61613
+  STOMP_CONNECTION_READ_TIMEOUT_SEC: 60
+  STOMP_CONNECTION_READ_TIMEOUT_MICROSEC: 0
+  STOMP_CLIENT_RECEIP_WAIT_SEC: 2
+  ESB_QUEUE_NAME: esb/offers
+  ESB_SENDER_URL: http://esb-test.7733.ru:8088/message/v1.0/xml
+  FTP_LOGIN: isapteka
+  FTP_PASSWORD: isapteka
+  LOCAL_PATH_TO_PRICES: /tmp/tmp_files/
+  OFFERS_IMAGES_URL: 'https://xn----jtbzarccck.xn--80ae2aeeogi5fxc.xn--p1ai/s/gi/'
+
+workers:
+  - name: esb
+    replicaCount: 1
+    args: "sudo -E /service/bin/console esb:pool start -f"
+    service: false
+    resources:
+      limits:
+        memory: 300Mi
+      requests:
+        memory: 300Mi
+
+jobs:
+  - name: esb-ping
+    schedule: "*/3 * * * *"
+    args: "sudo -E -u www-data /service/bin/console esb:send:ping"
+    failedJobsHistoryLimit: 2
+    successfulJobsHistoryLimit: 2
+  - name: messenger-consume-async
+    schedule: "* * * * *"
+    args: "sudo -E -u www-data /service/bin/console messenger:consume async --time-limit=1200 --sleep 60 --no-interaction"
+    failedJobsHistoryLimit: 1
+    successfulJobsHistoryLimit: 1
+    concurrencyPolicy: Forbid
+  - name: build-vladivostok
+    schedule: "0 19 * * *"
+    args: "sudo -E -u www-data /service/bin/console build:offers:by-kladr-ids 2500000100000 -vvv"
+    failedJobsHistoryLimit: 2
+    successfulJobsHistoryLimit: 2
+  - name: fill-yandex-products
+    schedule: "0 5 * * *"
+    args: "sudo -E -u www-data /service/bin/console yandex:update-products -vvv"
+    failedJobsHistoryLimit: 2
+    successfulJobsHistoryLimit: 2

@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv bash
+
+# Configure service
+mkdir -p /service/logs/$SERVICE_LOGPATH/nginx
+chmod +x /service/bin/console
+chown -R www-data:www-data /service/logs/$SERVICE_LOGPATH

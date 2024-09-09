@@ -1,0 +1,105 @@
+variables:
+  CACHE_IMAGE: $CI_REGISTRY_IMAGE/cache:latest
+  PROJECT: offers
+  APP_IMAGE: $CI_REGISTRY_IMAGE/app:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}
+  GIT_DEPTH: 1
+
+include:
+  - project: "devops/ci-templates"
+    ref: main
+    file: "/ci/build.yaml"
+  - project: "devops/ci-templates"
+    ref: main
+    file: "/ci/deploy.yaml"
+
+stages:
+  - build
+  - tests
+  - deploy-preprod
+  - deploy-prod
+
+build:
+  extends: .build_img
+
+build_dev:
+  extends: .build_img
+  allow_failure: false
+  only:
+    - /^release[/].*$/
+
+build_dev_nginx:
+  extends: .build_img
+  allow_failure: false
+  variables:
+    DOCKER_BUILD_STAGE: nginx
+  only:
+    - /^release[/].*$/
+
+build-composer:
+  image:
+    name: jakzal/phpqa:php8.1-alpine
+  stage: build
+  interruptible: true
+  script:
+    - composer install
+  artifacts:
+    paths:
+      - vendor/
+  tags:
+    - preprod-k8s
+
+phpstan:
+  image:
+    name: jakzal/phpqa:php8.1-alpine
+  stage: tests
+  interruptible: true
+  script:
+    - ls -la
+    - $CI_PROJECT_DIR/vendor/bin/phpstan analyse --no-progress --error-format gitlab > phpstan-report.json
+  artifacts:
+    paths:
+      - phpstan-report.json
+    expire_in: 1 days
+    when: always
+  tags:
+    - preprod-k8s
+
+php-cs-fixer:
+  image:
+    name: jakzal/phpqa:php8.1-alpine
+  stage: tests
+  interruptible: true
+  script:
+    - $CI_PROJECT_DIR/vendor/bin/php-cs-fixer fix -vvv --dry-run
+  tags:
+    - preprod-k8s
+
+deploy_stage:
+  extends: .deploy-with-nginx-remote-helm
+  when: manual
+  stage: deploy-preprod
+  variables:
+    HOSTNAME: ${PROJECT}.new-preprod.7733.ru
+    NS: stage-${PROJECT}
+    IMAGE_FULLNAME: $CI_REGISTRY_IMAGE/app:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}
+    FULL_VALUES_PATH: .docker/deploy/values-preprod.yaml
+    CHART_VERSION: "0.1.3"
+  only:
+    - /^release[/].*$/
+
+deploy_release:
+  extends: .deploy-with-nginx-remote-helm
+  when: manual
+  stage: deploy-prod
+  except:
+    - develop
+  variables:
+    HOSTNAME: ${PROJECT}.7733.ru
+    NS: release-${PROJECT}
+    IMAGE_FULLNAME: $CI_REGISTRY_IMAGE/app:${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}
+    FULL_VALUES_PATH: .docker/deploy/values-prod.yaml
+    CHART_VERSION: "0.1.3"
+  tags:
+    - prod-k8s
+  only:
+    - /^release[/].*$/

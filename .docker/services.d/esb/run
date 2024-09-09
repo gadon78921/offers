@@ -1,0 +1,3 @@
+#!/usr/bin/with-contenv sh
+cd /service
+sudo -E -u www-data bin/console esb:pool start -f

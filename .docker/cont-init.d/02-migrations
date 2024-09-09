@@ -1,0 +1,13 @@
+#!/usr/bin/with-contenv bash
+cd /service
+if [ "$APP_ENV" = "dev" ]; then
+    echo "Develop Mode"
+    bin/console doctrine:database:create --if-not-exists -q
+else
+    echo "Not Develop Mode, no base create!"
+fi
+
+bin/console do:mi:mi --allow-no-migration -q
+bin/console c:c --env=prod
+chown -R www-data:www-data /service/var
+#rm -rf /service/var/cache/
